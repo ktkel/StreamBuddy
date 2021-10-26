@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">StreamBuddy</string>
+    <string name="sign_up_here" />
+    <string name="name" />
+    <string name="your_name" />
+    <string name="email" />
+    <string name="password" />
+    <string name="create_account" />
+    <string name="sign_in" />
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
