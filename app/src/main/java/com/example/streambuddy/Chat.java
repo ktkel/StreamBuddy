@@ -10,10 +10,10 @@ import android.view.ViewGroup;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link Mail#newInstance} factory method to
+ * Use the {@link Chat#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class Mail extends Fragment {
+public class Chat extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -24,7 +24,7 @@ public class Mail extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public Mail() {
+    public Chat() {
         // Required empty public constructor
     }
 
@@ -37,8 +37,8 @@ public class Mail extends Fragment {
      * @return A new instance of fragment Mail.
      */
     // TODO: Rename and change types and number of parameters
-    public static Mail newInstance(String param1, String param2) {
-        Mail fragment = new Mail();
+    public static Chat newInstance(String param1, String param2) {
+        Chat fragment = new Chat();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
