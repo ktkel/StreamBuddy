@@ -1,16 +1,15 @@
 package com.example.streambuddy;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -25,8 +24,6 @@ import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the  factory method to
- * create an instance of this fragment.
  */
 public class Users extends Fragment {
 
@@ -35,20 +32,21 @@ public class Users extends Fragment {
     List<UserModel> usersList;
     FirebaseAuth firebaseAuth;
 
-    public void UsersFragment() {
+    public Users() {
         // Required empty public constructor
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        adapterUsers = new AdapterUser(getActivity(), usersList);
         View view = inflater.inflate(R.layout.fragment_users, container, false);
         recyclerView = view.findViewById(R.id.recyclep);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         usersList = new ArrayList<>();
         firebaseAuth = FirebaseAuth.getInstance();
+        adapterUsers = new AdapterUser(getActivity(), usersList);
+        recyclerView.setAdapter(adapterUsers);
         getAllUsers();
         return view;
     }
@@ -81,7 +79,5 @@ public class Users extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         setHasOptionsMenu(true);
         super.onCreate(savedInstanceState);
-
-
     }
 }

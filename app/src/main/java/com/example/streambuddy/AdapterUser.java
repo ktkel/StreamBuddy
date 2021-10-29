@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
@@ -19,35 +20,36 @@ public class AdapterUser extends RecyclerView.Adapter<AdapterUser.MyHolder> {
 
     Context context;
     FirebaseAuth firebaseAuth;
-    String userID;
+    String uid;
 
-    public AdapterUser(Context context, List<UserModel> list){
+    public AdapterUser(Context context, List<UserModel> list) {
         this.context = context;
         this.list = list;
         firebaseAuth = FirebaseAuth.getInstance();
-        userID = firebaseAuth.getUid();
+        uid = firebaseAuth.getUid();
     }
 
     List<UserModel> list;
 
     @NonNull
     @Override
-
-    public MyHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public MyHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_users, parent, false);
         return new MyHolder(view);
     }
 
-
-
     @Override
-    public void onBindViewHolder(@NonNull MyHolder holder, int position) {
-        final String anotherid = list.get(position).getUid();
+    public void onBindViewHolder(@NonNull MyHolder holder, final int position) {
+        final String hisuid = list.get(position).getUid();
         String userImage = list.get(position).getImage();
         String username = list.get(position).getName();
-        String useremail = list.get(position).getEmail();
+        String usermail = list.get(position).getEmail();
         holder.name.setText(username);
-        holder.email.setText(useremail);
+        holder.email.setText(usermail);
+        try {
+            Glide.with(context).load(userImage).into(holder.profiletv);
+        } catch (Exception e) {
+        }
     }
 
     @Override
@@ -55,11 +57,12 @@ public class AdapterUser extends RecyclerView.Adapter<AdapterUser.MyHolder> {
         return list.size();
     }
 
-    class MyHolder extends RecyclerView.ViewHolder{
+    class MyHolder extends RecyclerView.ViewHolder {
+
         CircleImageView profiletv;
         TextView name, email;
 
-        public MyHolder(View itemView){
+        public MyHolder(@NonNull View itemView) {
             super(itemView);
             profiletv = itemView.findViewById(R.id.imagep);
             name = itemView.findViewById(R.id.namep);

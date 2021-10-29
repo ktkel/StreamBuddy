@@ -1,9 +1,4 @@
 package com.example.streambuddy;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -15,9 +10,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -25,14 +23,19 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
 
 public class LoginScreen extends AppCompatActivity {
 
     private EditText email, password, name;
-    private Button login;
-    private TextView addnewAccount, passwordRecovery;
-    FirebaseUser user;
-    private FirebaseAuth authenticator;
+    private Button mlogin;
+    private TextView newdnewaccount, reocverpass;
+    FirebaseUser currentUser;
+    private ProgressDialog loadingBar;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,124 +46,161 @@ public class LoginScreen extends AppCompatActivity {
         actionBar.setDisplayShowHomeEnabled(true);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
+        // initialising the layout items
         email = findViewById(R.id.login_email);
         password = findViewById(R.id.login_password);
-        addnewAccount = findViewById(R.id.needs_new_account);
-        passwordRecovery = findViewById(R.id.forgetp);
-        authenticator = FirebaseAuth.getInstance();
-        login = findViewById(R.id.login_button);
+        newdnewaccount = findViewById(R.id.needs_new_account);
+        reocverpass = findViewById(R.id.forgetp);
+        mAuth = FirebaseAuth.getInstance();
+        mlogin = findViewById(R.id.login_button);
+        loadingBar = new ProgressDialog(this);
+        mAuth = FirebaseAuth.getInstance();
 
-        if (authenticator != null){
-            user = authenticator.getCurrentUser();
+        // checking if user is null or not
+        if (mAuth != null) {
+            currentUser = mAuth.getCurrentUser();
         }
-        login.setOnClickListener(new View.OnClickListener() {
+
+        mlogin.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                String message = email.getText().toString().trim();
+            public void onClick(View v) {
+                String emaill = email.getText().toString().trim();
                 String pass = password.getText().toString().trim();
 
-                if (!Patterns.EMAIL_ADDRESS.matcher(message).matches()){
-                    email.setError("Email invalid");
+                // if format of email doesn't matches return null
+                if (!Patterns.EMAIL_ADDRESS.matcher(emaill).matches()) {
+                    email.setError("Invalid Email");
                     email.setFocusable(true);
+
                 } else {
-                    loginUser(message, pass);
+                    loginUser(emaill, pass);
                 }
             }
         });
 
-        addnewAccount.setOnClickListener(new View.OnClickListener() {
-
+        // If new account then move to Registration Activity
+        newdnewaccount.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(LoginScreen.this, Registration.class);
-                startActivity(intent);
+            public void onClick(View v) {
+                startActivity(new Intent(LoginScreen.this, Registration.class));
             }
         });
 
-        passwordRecovery.setOnClickListener(new View.OnClickListener() {
+        // Recover Your Password using email
+        reocverpass.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                showRecovery();
+            public void onClick(View v) {
+                showRecoverPasswordDialog();
             }
         });
     }
 
-    private void showRecovery(){
+    private void showRecoverPasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Recover your password");
+        builder.setTitle("Recover Password");
         LinearLayout linearLayout = new LinearLayout(this);
-        final EditText emailET = new EditText(this);
-        emailET.setText("mail");
-        emailET.setMinEms(16);
-        emailET.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        linearLayout.addView(emailET);
+        final EditText emailet = new EditText(this);//write your registered email
+        emailet.setText("Email");
+        emailet.setMinEms(16);
+        emailet.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        linearLayout.addView(emailet);
         linearLayout.setPadding(10, 10, 10, 10);
         builder.setView(linearLayout);
-        builder.setPositiveButton("Recover", new DialogInterface.OnClickListener(){
-
+        builder.setPositiveButton("Recover", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                String message = emailET.getText().toString().trim();
-                Recover(message);
+            public void onClick(DialogInterface dialog, int which) {
+                String emaill = emailet.getText().toString().trim();
+                beginRecovery(emaill);//send a mail on the mail to recover password
             }
         });
-        builder.setNegativeButton("Canel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
             }
         });
         builder.create().show();
     }
 
-    private void Recover(String message){
-        authenticator.sendPasswordResetEmail(message).addOnCompleteListener(new OnCompleteListener<Void>() {
+    private void beginRecovery(String emaill) {
+        loadingBar.setMessage("Sending Email....");
+        loadingBar.setCanceledOnTouchOutside(false);
+        loadingBar.show();
+
+        // send reset password email
+        mAuth.sendPasswordResetEmail(emaill).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
+                loadingBar.dismiss();
                 if (task.isSuccessful()) {
-                    Toast.makeText(LoginScreen.this, "Sent", Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginScreen.this, "Done sent", Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(LoginScreen.this, "Error", Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginScreen.this, "Error Occured", Toast.LENGTH_LONG).show();
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(LoginScreen.this, "Failure", Toast.LENGTH_LONG).show();
+                loadingBar.dismiss();
+                Toast.makeText(LoginScreen.this, "Error Failed", Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void loginUser(String emailer, String password){
+    private void loginUser(String emaill, String pass) {
+        loadingBar.setMessage("Logging In....");
+        loadingBar.show();
 
-        authenticator.signInWithEmailAndPassword(emailer, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+        // sign in with email and password after authenticating
+        mAuth.signInWithEmailAndPassword(emaill, pass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
-                if (task.isSuccessful()){
 
-                    FirebaseUser newser = authenticator.getCurrentUser();
+                if (task.isSuccessful()) {
 
-                    if (task.getResult().getAdditionalUserInfo().isNewUser()){
-                        String email = newser.getEmail();
-                        String userID = newser.getUid();
+                    loadingBar.dismiss();
+                    FirebaseUser user = mAuth.getCurrentUser();
+
+                    if (task.getResult().getAdditionalUserInfo().isNewUser()) {
+                        String email = user.getEmail();
+                        String uid = user.getUid();
+                        HashMap<Object, String> hashMap = new HashMap<>();
+                        hashMap.put("email", email);
+                        hashMap.put("uid", uid);
+                        hashMap.put("name", "");
+                        hashMap.put("onlineStatus", "online");
+                        hashMap.put("typingTo", "noOne");
+                        hashMap.put("phone", "");
+                        hashMap.put("image", "");
+                        hashMap.put("cover", "");
+                        FirebaseDatabase database = FirebaseDatabase.getInstance();
+
+                        // store the value in Database in "Users" Node
+                        DatabaseReference reference = database.getReference("Users");
+
+                        // storing the value in Firebase
+                        reference.child(uid).setValue(hashMap);
                     }
-                    Toast.makeText(LoginScreen.this, "User Registered Successfully " + newser.getEmail(), Toast.LENGTH_LONG).show();
-                    Intent main = new Intent (LoginScreen.this, Dashboard.class);
-                    main.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(main);
+                    Toast.makeText(LoginScreen.this, "Registered User " + user.getEmail(), Toast.LENGTH_LONG).show();
+                    Intent mainIntent = new Intent(LoginScreen.this, Dashboard.class);
+                    mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(mainIntent);
                     finish();
                 } else {
-                    Toast.makeText(LoginScreen.this, "Login failed", Toast.LENGTH_LONG).show();
+                    loadingBar.dismiss();
+                    Toast.makeText(LoginScreen.this, "Login Failed", Toast.LENGTH_LONG).show();
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(LoginScreen.this, "Error", Toast.LENGTH_LONG).show();
+                loadingBar.dismiss();
+                Toast.makeText(LoginScreen.this, "Error Occured", Toast.LENGTH_LONG).show();
             }
         });
     }
 
+    @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return super.onSupportNavigateUp();

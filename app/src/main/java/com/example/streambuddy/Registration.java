@@ -1,9 +1,4 @@
 package com.example.streambuddy;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,23 +9,28 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
-
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
 
 public class Registration extends AppCompatActivity {
 
     private EditText email, password, name;
-    private Button register;
-    private TextView liveAccount;
-    private FirebaseAuth authenticator;
+    private Button mRegister;
+    private TextView existaccount;
+    private ProgressDialog progressDialog;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,76 +43,78 @@ public class Registration extends AppCompatActivity {
         email = findViewById(R.id.register_email);
         name = findViewById(R.id.register_name);
         password = findViewById(R.id.register_password);
-        register = findViewById(R.id.register_button);
-        liveAccount = findViewById(R.id.homepage);
-        authenticator = FirebaseAuth.getInstance();
+        mRegister = findViewById(R.id.register_button);
+        existaccount = findViewById(R.id.homepage);
+        mAuth = FirebaseAuth.getInstance();
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Register");
 
-        register.setOnClickListener(new View.OnClickListener() {
+        mRegister.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
-                String message = email.getText().toString().trim();
-                String username = name.getText().toString().trim();
+                String emaill = email.getText().toString().trim();
+                String uname = name.getText().toString().trim();
                 String pass = password.getText().toString().trim();
-                if (!Patterns.EMAIL_ADDRESS.matcher(message).matches()) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(emaill).matches()) {
                     email.setError("Invalid Email");
                     email.setFocusable(true);
+                } else if (pass.length() < 6) {
+                    password.setError("Length Must be greater than 6 character");
+                    password.setFocusable(true);
                 } else {
-                    authenticator.createUserWithEmailAndPassword(message,pass).addOnCompleteListener(Registration.this, new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-                                Toast.makeText(Registration.this, "Successfully registered " + task.isSuccessful(), Toast.LENGTH_LONG).show();
-                                Intent intent = new Intent(Registration.this, Dashboard.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                                finish();
-                            } else {
-                                Toast.makeText(Registration.this, "Error 48x04E", Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    }).addOnFailureListener(new OnFailureListener() {
-
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(Registration.this, "Whoopsie 89x225B", Toast.LENGTH_LONG).show();
-                        }
-                    });                    }
+                    registerUser(emaill, pass, uname);
+                }
             }
         });
-        liveAccount.setOnClickListener(new View.OnClickListener() {
+        existaccount.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Registration.this, LoginScreen.class);
-                startActivity(intent);
+            public void onClick(View v) {
+                startActivity(new Intent(Registration.this, LoginScreen.class));
             }
         });
     }
-    private void registerUser(String email, final String pass, final String username){
-        authenticator.createUserWithEmailAndPassword(email,pass).addOnCompleteListener(Registration.this, new OnCompleteListener<AuthResult>() {
+
+    private void registerUser(String emaill, final String pass, final String uname) {
+        progressDialog.show();
+        mAuth.createUserWithEmailAndPassword(emaill, pass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()) {
-                    FirebaseUser user = authenticator.getCurrentUser();
+                    progressDialog.dismiss();
+                    FirebaseUser user = mAuth.getCurrentUser();
                     String email = user.getEmail();
-                    String userID = user.getUid();
-                    Toast.makeText(Registration.this, "Successfully registered " + user.getEmail(), Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(Registration.this, Dashboard.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
+                    String uid = user.getUid();
+                    HashMap<Object, String> hashMap = new HashMap<>();
+                    hashMap.put("email", email);
+                    hashMap.put("uid", uid);
+                    hashMap.put("name", uname);
+                    hashMap.put("onlineStatus", "online");
+                    hashMap.put("typingTo", "noOne");
+                    hashMap.put("image", "");
+                    FirebaseDatabase database = FirebaseDatabase.getInstance();
+                    DatabaseReference reference = database.getReference("Users");
+                    reference.child(uid).setValue(hashMap);
+                    Toast.makeText(Registration.this, "Registered User " + user.getEmail(), Toast.LENGTH_LONG).show();
+                    Intent mainIntent = new Intent(Registration.this, Dashboard.class);
+                    mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(mainIntent);
                     finish();
                 } else {
-                    Toast.makeText(Registration.this, "Error 48x04E", Toast.LENGTH_LONG).show();
+                    progressDialog.dismiss();
+                    Toast.makeText(Registration.this, "Error", Toast.LENGTH_LONG).show();
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
-
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(Registration.this, "Whoopsie 89x225B", Toast.LENGTH_LONG).show();
+                progressDialog.dismiss();
+                Toast.makeText(Registration.this, "Error Occured", Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    public boolean onSupportNavigateUp(){
+    @Override
+    public boolean onSupportNavigateUp() {
         onBackPressed();
         return super.onSupportNavigateUp();
     }

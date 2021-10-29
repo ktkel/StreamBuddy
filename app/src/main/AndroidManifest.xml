@@ -15,19 +15,19 @@
         android:theme="@style/Theme.StreamBuddy">
         <activity
             android:name=".EditProfile"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".Dashboard"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".Registration"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".LoginScreen"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".SplashScreen"
             android:exported="true">
